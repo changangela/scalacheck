@@ -327,12 +327,12 @@ object GenSpecification extends Properties("Gen") with GenSpecificationVersionSp
 
   property("resultOf2") = {
     case class A(m: Int, s: String)
-    forAll(resultOf(A)) { a:A => true }
+    forAll(resultOf(A.apply)) { a:A => true }
   }
 
   property("resultOf3") = {
     case class B(n: Int, s: String, b: Boolean)
-    implicit val arbB: Arbitrary[B] = Arbitrary(resultOf(B))
+    implicit val arbB: Arbitrary[B] = Arbitrary(resultOf(B.apply))
     forAll { b:B => true }
   }
 
@@ -422,7 +422,7 @@ object GenSpecification extends Properties("Gen") with GenSpecificationVersionSp
     i21:Int,i22:Int
   )
 
-  property("22 field case class works") = forAll(Gen.resultOf(Full22.tupled)){
+  property("22 field case class works") = forAll(Gen.resultOf(Full22.apply.tupled)){
     _.isInstanceOf[Full22]
   }
 
