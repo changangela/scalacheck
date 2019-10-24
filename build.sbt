@@ -159,5 +159,5 @@ lazy val native = project.in(file("native"))
 
 lazy val dottySettings = List(
   libraryDependencies := libraryDependencies.value.map(_.withDottyCompat(scalaVersion.value)),
-  scalacOptions := List("-language:Scala2,implicitConversions", "-Yexplicit-nulls")
+  scalacOptions := List("-language:Scala2,implicitConversions", "-Yexplicit-nulls", "-Yjava-interop-dont-nullify-outermost")
 )
