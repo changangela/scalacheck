@@ -115,7 +115,7 @@ object Pretty {
   }
 
   implicit def prettyThrowable(e: Throwable): Pretty = Pretty { prms =>
-    val strs = e.getStackTrace.map { st =>
+    val strs = e.getStackTrace.map(_.nn).map { st =>
       import st._
       getClassName+"."+getMethodName + "("+getFileName+":"+getLineNumber+")"
     }

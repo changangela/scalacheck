@@ -188,7 +188,7 @@ object Test {
   /** An exception was raised when trying to evaluate the property with the
    *  given concrete arguments. If an exception was raised before or during
    *  argument generation, the argument list will be empty. */
-  sealed case class PropException(args: List[Arg[Any]], e: Throwable,
+  sealed case class PropException(args: List[Arg[Any]], e: Throwable | Null,
     labels: Set[String]) extends Status
 
   trait TestCallback { self =>
@@ -323,7 +323,7 @@ object Test {
     def workerFun(workerIdx: Int): Result = {
       var n = 0  // passed tests
       var d = 0  // discarded tests
-      var res: Result = null
+      var res: Result | Null = null // variable should be nullable.
       var fm = FreqMap.empty[Set[Any]]
 
       def isExhausted = d > minSuccessfulTests * maxDiscardRatio
@@ -355,7 +355,7 @@ object Test {
       if (res == null) {
         if (isExhausted) Result(Exhausted, n, d, fm)
         else Result(Passed, n, d, fm)
-      } else res
+      } else res.nn
     }
 
     val start = System.currentTimeMillis

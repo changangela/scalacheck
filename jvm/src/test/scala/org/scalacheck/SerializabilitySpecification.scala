@@ -10,14 +10,14 @@ object SerializabilitySpecification extends Properties("Serializability") {
   private def serializable[M](m: M): Boolean = {
     val baos = new ByteArrayOutputStream
     val oos = new ObjectOutputStream(baos)
-    var ois: ObjectInputStream = null
+    var ois: ObjectInputStream | Null = null
     try {
       oos.writeObject(m)
       oos.close()
       val bais = new ByteArrayInputStream(baos.toByteArray)
       ois = new ObjectInputStream(bais)
-      val m2 = ois.readObject() // just ensure we can read it back
-      ois.close()
+      val m2 = ois.nn.readObject() // just ensure we can read it back
+      ois.nn.close()
       true
     } catch {
       case thr: Throwable =>
@@ -25,7 +25,7 @@ object SerializabilitySpecification extends Properties("Serializability") {
         false
     } finally {
       oos.close()
-      if (ois != null) ois.close()
+      if (ois != null) ois.nn.close()
     }
   }
 

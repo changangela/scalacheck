@@ -38,7 +38,7 @@ object PrettySpecification extends Properties("Pretty") {
     Prop.forAll { (input: String, lead: String, x: Int) =>
       val length = lead.length + (x & 0xff) + 1
       val res = Pretty.break(input, lead, length)
-      val lines = res.split("\n")
+      val lines = res.split("\n").map(_.nn)
       lines.forall(s => s.length <= length)
     }
 
