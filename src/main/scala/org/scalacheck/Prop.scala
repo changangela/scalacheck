@@ -294,7 +294,7 @@ object Prop {
   case object Undecided extends Status
 
   /** Evaluating the property raised an exception */
-  sealed case class Exception(e: Throwable) extends Status {
+  sealed case class Exception(e: Throwable | Null) extends Status { // e should be nullable
     override def equals(o: Any) = o match {
       case Exception(_) => true
       case _ => false
@@ -361,7 +361,7 @@ object Prop {
   lazy val passed = Prop(Result(status = True))
 
   /** A property that denotes an exception */
-  def exception(e: Throwable): Prop = Prop(Result(status = Exception(e)))
+  def exception(e: Throwable | Null): Prop = Prop(Result(status = Exception(e))) // variable can be null.
 
   /** A property that denotes an exception */
   lazy val exception: Prop = exception(null)

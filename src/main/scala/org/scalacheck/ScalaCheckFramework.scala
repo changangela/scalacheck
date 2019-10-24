@@ -17,7 +17,7 @@ import org.scalacheck.Test.matchPropFilter
 
 private abstract class ScalaCheckRunner extends Runner {
 
-  val args: Array[String]
+  val args: Array[String | Null]
   val loader: ClassLoader
   val applyCmdParams: Parameters => Parameters
 
@@ -39,7 +39,8 @@ private abstract class ScalaCheckRunner extends Runner {
   def serializeTask(task: Task, serializer: TaskDef => String) =
     serializer(task.taskDef)
 
-  def tasks(taskDefs: Array[TaskDef]): Array[Task] = {
+  def tasks(_taskDefs: Array[TaskDef | Null] | Null): Array[Task | Null] = {
+    val taskDefs = _taskDefs.nn.map(_.nn)
     val isForked = taskDefs.exists(_.fingerprint().getClass.getName.contains("ForkMain"))
     taskDefs.map { taskDef =>
       if (isForked) checkPropTask(taskDef, single = false)
@@ -48,7 +49,7 @@ private abstract class ScalaCheckRunner extends Runner {
   }
 
   abstract class BaseTask(override val taskDef: TaskDef) extends Task {
-    val tags: Array[String] = Array()
+    val tags: Array[String | Null] = Array()
 
     val props: collection.Seq[(String,Prop)] = {
       val fp = taskDef.fingerprint.asInstanceOf[SubclassFingerprint]
@@ -81,20 +82,23 @@ private abstract class ScalaCheckRunner extends Runner {
 
     def execute(handler: EventHandler, loggers: Array[Logger],
       continuation: Array[Task] => Unit
-    ): Unit  = continuation(execute(handler,loggers))
+    ): Unit  = continuation(execute(handler,loggers.asInstanceOf[Array[Logger | Null]]).map(_.nn)) // java method array argument contents need to be nullable.
   }
 
   def rootTask(td: TaskDef) = new BaseTask(td) {
-    def execute(handler: EventHandler, loggers: Array[Logger]): Array[Task] =
+    def execute(handler: EventHandler | Null, loggers: Array[Logger | Null] | Null): Array[Task | Null] =
       props.map(_._1).toSet.toArray map { name =>
         checkPropTask(new TaskDef(td.fullyQualifiedName, td.fingerprint,
-          td.explicitlySpecified, Array(new TestSelector(name)))
+          td.explicitlySpecified, Array(new TestSelector(name)).asInstanceOf[Array[sbt.testing.Selector | Null]]) // java method array argument contents need to be nullable.
         , single = true)
       }
   }
 
   def checkPropTask(taskDef: TaskDef, single: Boolean) = new BaseTask(taskDef) {
-    def execute(handler: EventHandler, loggers: Array[Logger]): Array[Task] = {
+    def execute(_handler: EventHandler | Null, _loggers: Array[Logger | Null] | Null): Array[Task | Null] = {
+      val handler = _handler.nn
+      val loggers = _loggers.nn.map(_.nn)
+
       val params = applyCmdParams(properties.foldLeft(Parameters.default)((params, props) => props.overrideParameters(params)))
       val propertyFilter = params.propFilter.map(_.r)
 
@@ -111,7 +115,7 @@ private abstract class ScalaCheckRunner extends Runner {
         for ((name, prop) <- props)
           executeInternal(prop, name, handler, loggers, propertyFilter)
       }
-      Array.empty[Task]
+      Array.empty[Task | Null]
     }
 
     def executeInternal(prop: Prop, name: String, handler: EventHandler, loggers: Array[Logger], propertyFilter: Option[scala.util.matching.Regex]): Unit = {
@@ -156,7 +160,7 @@ private abstract class ScalaCheckRunner extends Runner {
         // TODO Stack traces should be reported through event
         val verbosityOpts = Set("-verbosity", "-v")
         val verbosity =
-          args.grouped(2).filter(twos => verbosityOpts(twos.head))
+          args.map(_.nn).grouped(2).filter(twos => verbosityOpts(twos.head))
             .toSeq.headOption.map(_.last).map(_.toInt).getOrElse(0)
         val s = if (result.passed) "+" else "!"
         val n = if (name.isEmpty) taskDef.fullyQualifiedName else name
@@ -178,21 +182,21 @@ final class ScalaCheckFramework extends Framework {
 
   val name = "ScalaCheck"
 
-  def fingerprints: Array[Fingerprint] = Array(
+  def fingerprints: Array[Fingerprint | Null] = Array(
     mkFP(false, "org.scalacheck.Properties"),
     mkFP(false, "org.scalacheck.Prop"),
     mkFP(true, "org.scalacheck.Properties"),
     mkFP(true, "org.scalacheck.Prop")
   )
 
-  def runner(_args: Array[String], _remoteArgs: Array[String],
-    _loader: ClassLoader
+  def runner(_args: Array[String | Null] | Null, _remoteArgs: Array[String | Null] | Null,
+    _loader: ClassLoader | Null
   ): Runner = new ScalaCheckRunner {
 
-    val args = _args
-    val remoteArgs = _remoteArgs
-    val loader = _loader
-    val (prms,unknownArgs) = Test.cmdLineParser.parseParams(args)
+    val args = _args.nn
+    val remoteArgs = _remoteArgs.nn
+    val loader = _loader.nn
+    val (prms,unknownArgs) = Test.cmdLineParser.parseParams(args.map(_.nn))
     val applyCmdParams = prms.andThen {
       p => p.withTestCallback(new Test.TestCallback {})
           .withCustomClassLoader(Some(loader))
@@ -218,13 +222,13 @@ final class ScalaCheckFramework extends Framework {
 
   }
 
-  def slaveRunner(_args: Array[String], _remoteArgs: Array[String],
+  def slaveRunner(_args: Array[String | Null], _remoteArgs: Array[String | Null],
     _loader: ClassLoader, send: String => Unit
   ): Runner = new ScalaCheckRunner {
     val args = _args
     val remoteArgs = _remoteArgs
     val loader = _loader
-    val applyCmdParams = Test.cmdLineParser.parseParams(args)._1.andThen {
+    val applyCmdParams = Test.cmdLineParser.parseParams(args.map(_.nn))._1.andThen {
       p => p.withTestCallback(new Test.TestCallback {})
           .withCustomClassLoader(Some(loader))
     }

@@ -79,7 +79,8 @@ object Cogen extends CogenArities with CogenLowPriority with CogenVersionSpecifi
     // Normalize unscaled values and scaling factors by moving powers of ten from value to scaling factor.
     @tailrec
     def normalize(unscaled: BigInteger, scale: Int): (BigInteger, Int) = {
-      val divideAndRemainder = unscaled.divideAndRemainder(BigInteger.TEN)
+      // java.math.BigInteger.divideAndRemainder | IM | returned array content should not be null.
+      val divideAndRemainder = unscaled.divideAndRemainder(BigInteger.TEN).map(_.nn)
       val quotient = divideAndRemainder(0)
       val remainder = divideAndRemainder(1)
       val canNormalize = (unscaled.abs.compareTo(BigInteger.TEN) >= 0) &&
